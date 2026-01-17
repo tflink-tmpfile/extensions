@@ -175,8 +175,6 @@ export default function Command() {
 
   // -- Markdown Generation --
   const getMarkdown = () => {
-    const timeDisplay = `${elapsedTime}s`;
-
     if (error) {
       return `
 # ❌ Upload Failed
