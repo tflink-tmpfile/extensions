@@ -276,7 +276,10 @@ Please wait while we send your data to the cloud.
           {!isLoading && error && (
             <Action
               title="Retry"
-              onAction={uploadFromClipboard}
+              onAction={() => {
+                const controller = new AbortController();
+                uploadFromClipboard(controller.signal);
+              }}
               shortcut={{ modifiers: ["cmd"], key: "r" }}
             />
           )}
