@@ -1,10 +1,10 @@
 {
   "$schema": "https://www.raycast.com/schemas/extension.json",
-  "name": "tflink-tmpfile",
-  "title": "Tflink Tmpfile",
-  "description": "Upload clipboard text or files to tmpfile.link anonymously and get a shareable link.",
+  "name": "tmpfile-link",
+  "title": "tmpfile.link",
+  "description": "Upload clipboard text to tmpfile.link anonymously and get a shareable link.",
   "icon": "icon.png",
-  "author": "tflink-tmpfile",
+  "author": "antigravity",
   "categories": [
     "Productivity",
     "Developer Tools"
@@ -13,17 +13,14 @@
   "commands": [
     {
       "name": "upload",
-      "title": "Upload Clipboard to Tmpfile.Link",
+      "title": "Upload Clipboard to tmpfile.link",
       "subtitle": "tmpfile.link",
-      "description": "Uploads the current clipboard content to tmpfile.link and copies the URL.",
-      "mode": "view",
-      "icon": "upload-icon.png"
+      "description": "Uploads the current clipboard text to tmpfile.link and copies the URL.",
+      "mode": "view"
     }
   ],
   "dependencies": {
     "@raycast/api": "^1.104.1",
-    "@types/qrcode": "^1.5.6",
-    "qrcode": "^1.5.4",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
@@ -36,7 +33,7 @@
   },
   "scripts": {
     "dev": "ray dev",
-    "build": "ray build -e dist -o . && mkdir -p assets && cp icon.png assets/icon.png && cp upload-icon.png assets/upload-icon.png",
+    "build": "ray build -e dist -o dist",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
     "publish": "npx @raycast/api@latest publish"

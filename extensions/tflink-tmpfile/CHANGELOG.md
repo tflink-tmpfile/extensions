@@ -1,6 +1,13 @@
 # Changelog
 
-## [Initial Version] - {PR_MERGE_DATE}
+## [Fixed] - 2026-01-19
+
+-   Fixed issue where clipboard images were uploaded with generic names (e.g., "Image (...)").
+-   Added sanitization for all filenames to ensure URL safety.
+-   Added automatic extension detection for clipboard images (png/jpg).
+-   Replaced remote QR code API with local generation for better privacy and offline support.
+
+## [Initial Version] - 2026-01-17
 
 -   Initial release of Tflink Tmpfile extension.
 -   Added `upload` command to upload clipboard content (files/text) to tmpfile.link.

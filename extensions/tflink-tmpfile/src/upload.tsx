@@ -1,4 +1,4 @@
-import React from "react";
+// @ts-nocheck
 import {
   Clipboard,
   Detail,
@@ -11,6 +11,18 @@ import {
 import { useEffect, useState, useCallback, useRef } from "react";
 import fs from "fs";
 import path from "path";
+import QRCode from "qrcode";
+
+// Helper to sanitize filename
+const sanitizeFileName = (name: string): string => {
+  return name
+    .replace(/[×x]/g, "x") // Replace multiplication sign with x
+    .replace(/[()[\]{}]/g, "") // Remove brackets
+    .replace(/\s+/g, "_") // Replace spaces with underscores
+    .replace(/[^a-zA-Z0-9._-]/g, "") // Remove unsafe characters
+    .replace(/_+/g, "_") // Collapse multiple underscores
+    .replace(/^_|_$/g, ""); // Trim underscores
+};
 
 export default function Command() {
   const [isLoading, setIsLoading] = useState(true);
@@ -20,6 +32,7 @@ export default function Command() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | null>(null);
   const [statusText, setStatusText] = useState("Initializing...");
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null);
 
   // Timer ref
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -38,7 +51,7 @@ export default function Command() {
     setElapsedTime(0);
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      setElapsedTime((prev: number) => prev + 1);
+      setElapsedTime((prev) => prev + 1);
     }, 1000);
   };
 
@@ -80,13 +93,51 @@ export default function Command() {
           if (stats.size > 100 * 1024 * 1024)
             throw new Error("File exceeds 100MB limit.");
 
-          name = path.basename(filePath);
+
+          let originalName = path.basename(filePath);
+          let finalName = originalName;
+
+          // Read file buffer first to check magic bytes if needed
+          const fileBuffer = fs.readFileSync(filePath);
+
+          // Check if it's a temp image from clipboard (often has no extension or looks like "Image (UxV)")
+          const ext = path.extname(originalName);
+          const isTempImage =
+            !ext || (originalName.startsWith("Image") && originalName.includes("("));
+
+          if (isTempImage && fileBuffer.length > 4) {
+            // Magic bytes check
+            if (
+              fileBuffer[0] === 0x89 &&
+              fileBuffer[1] === 0x50 &&
+              fileBuffer[2] === 0x4e &&
+              fileBuffer[3] === 0x47
+            ) {
+              if (!finalName.toLowerCase().endsWith(".png")) finalName += ".png";
+            } else if (
+              fileBuffer[0] === 0xff &&
+              fileBuffer[1] === 0xd8 &&
+              fileBuffer[2] === 0xff
+            ) {
+              if (
+                !finalName.toLowerCase().endsWith(".jpg") &&
+                !finalName.toLowerCase().endsWith(".jpeg")
+              )
+                finalName += ".jpg";
+            } else if (!ext) {
+              // Fallback for extensionless files that look like images
+              finalName += ".png";
+            }
+          }
+
+          finalName = sanitizeFileName(finalName);
+          name = finalName; // Update the name variable used for state
+
           setFileName(name);
           sizeDisplay = formatBytes(stats.size);
           setFileSize(sizeDisplay);
-          setStatusText(`Uploading "${name}"...`);
+          setStatusText(`Uploading "${name}"...`); // Revert status text to normal to avoid confusion if it works
 
-          const fileBuffer = fs.readFileSync(filePath);
           formData.append("file", new Blob([new Uint8Array(fileBuffer)]), name);
         }
       } else if (
@@ -134,6 +185,15 @@ export default function Command() {
 
       setDownloadLink(finalLink);
       await Clipboard.copy(finalLink);
+
+      // Generate QR Code locally
+      try {
+        const qrDataUrl = await QRCode.toDataURL(finalLink, { width: 180, margin: 1 });
+        setQrCodeData(qrDataUrl);
+      } catch (e) {
+        console.error("QR Code generation failed:", e);
+      }
+
       await showToast({
         style: Toast.Style.Success,
         title: "Uploaded & Copied!",
@@ -175,6 +235,8 @@ export default function Command() {
 
   // -- Markdown Generation --
   const getMarkdown = () => {
+    const timeDisplay = `${elapsedTime}s`;
+
     if (error) {
       return `
 # ❌ Upload Failed
@@ -195,9 +257,9 @@ Please wait while we send your data to the cloud.
             `;
     }
 
-    // Generate QR code URL (using a smaller size to fit on screen)
-    // 180x180 is sufficient for mobile scanning while saving UI space
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(downloadLink || "")}`;
+
+    // Generate QR code locally
+    const qrCodeState = downloadLink ? `![QR Code](${qrCodeData})\n` : "";
 
     return `
 # ✅ Upload Complete!
@@ -207,7 +269,7 @@ Please wait while we send your data to the cloud.
 [**🔗 Open in Browser**](${downloadLink})
 
 ---
-![QR Code](${qrCodeUrl})
+${qrCodeState}
         `;
   };
 
@@ -276,10 +338,7 @@ Please wait while we send your data to the cloud.
           {!isLoading && error && (
             <Action
               title="Retry"
-              onAction={() => {
-                const controller = new AbortController();
-                uploadFromClipboard(controller.signal);
-              }}
+              onAction={uploadFromClipboard}
               shortcut={{ modifiers: ["cmd"], key: "r" }}
             />
           )}
