@@ -7,7 +7,7 @@
 -   Added automatic extension detection for clipboard images (png/jpg).
 -   Replaced remote QR code API with local generation for better privacy and offline support.
 
-## [Initial Version] - 2026-01-17
+## [Initial Version] - {PR_MERGE_DATE}
 
 -   Initial release of Tflink Tmpfile extension.
 -   Added `upload` command to upload clipboard content (files/text) to tmpfile.link.
