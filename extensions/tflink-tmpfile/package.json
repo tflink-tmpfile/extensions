@@ -17,7 +17,7 @@
       "subtitle": "tmpfile.link",
       "description": "Uploads the current clipboard content to tmpfile.link and copies the URL.",
       "mode": "view",
-      "icon": "assets/upload-icon.png"
+      "icon": "upload-icon.png"
     }
   ],
   "dependencies": {
